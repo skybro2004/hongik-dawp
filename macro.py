@@ -21,7 +21,7 @@ IMAGE_FOLDER_PATH = os.path.join(path, "Training")
 def read_img(category, subcategory, trash_name, file_name):
     # 카테고리가 있는지 확인
     if not os.path.isdir(os.path.join(IMAGE_FOLDER_PATH, f"[T원천]{category}_{subcategory}_{subcategory}")):
-        raise # TODO: 에러 메시지
+        raise Exception("해당 카테고리 이미지가 없음.")
 
     image_name = ".".join(file_name.split(".")[:-1]) + ".jpg"
     image_path = os.path.join(IMAGE_FOLDER_PATH, f"[T원천]{category}_{subcategory}_{subcategory}", trash_name, image_name)
@@ -40,65 +40,64 @@ def read_img(category, subcategory, trash_name, file_name):
 def read_json(category, subcategory, trash_name, file_name):
     with open(os.path.join(JSON_DATA_FOLDER_PATH, category, subcategory, trash_name, file_name), 'r') as label_file_raw:
         # json 디코드
-        label_file_json = json.load(label_file_raw)
-    return label_file_json
+        label_file = json.load(label_file_raw)
+    return label_file
 
 
-def image_filter(category, subcategory, trash_name, file_name):
-    with open(os.path.join(JSON_DATA_FOLDER_PATH, category, subcategory, trash_name, file_name+".json"), 'r') as label_file_raw:
-        # 카테고리가 있는지 확인
-        if not os.path.isdir(os.path.join(IMAGE_FOLDER_PATH, f"[T원천]{category}_{subcategory}_{subcategory}")):
-            return
+def image_filter(label_file):
+    # 이미지 내 쓰레기가 2개 이상이면 raise
+    if label_file["BoundingCount"]!="1":
+        raise Exception("이미지 내 쓰레기가 2개 이상임.")
 
-        # json 디코드
-        label_file_json = json.load(label_file_raw)
-        # 객체가 2개 이상이면 return
-        if label_file_json["BoundingCount"]!="1":
-            return
-        
-        # 이미지 불러오기
-        image_name = ".".join(file_name.split(".")[:-1]) + ".jpg"
-        image_path = os.path.join(IMAGE_FOLDER_PATH, f"[T원천]{category}_{subcategory}_{subcategory}", trash_name, image_name)
-        # img_array = np.fromfile(image_path, np.uint8)
-        # image_file = cv2.imdecode(img_array, cv2.IMREAD_COLOR) # 경로에 한글이 있을 시 버그 나는 것 대응하는 코드
-        image_file = cv2.imread(image_path)
-        # cv2.imshow('origin', image_file)
-        # cv2.waitKey(0)
 
-        bounding = label_file_json["Bounding"][0]
-        try:
-            image_position = [
-                [int(bounding["x1"]), int(bounding["y1"])],
-                [int(bounding["x2"]), int(bounding["y2"])]
-            ]
-        except KeyError:
-            # TODO: 사각형이 아닌 Polygon으로 레이블링된 데이터 처리
-            return
-        image_size = [
-            abs(image_position[1][0] - image_position[0][0]),
-            abs(image_position[1][1] - image_position[0][1])
+def get_image_position(label_file):
+    bounding = label_file["Bounding"][0]
+    try:
+        image_position = [
+            [int(bounding["x1"]), int(bounding["y1"])],
+            [int(bounding["x2"]), int(bounding["y2"])]
         ]
-        
-        margin_w = int(image_size[0]*MARGIN_SIZE)
-        margin_h = int(image_size[1]*MARGIN_SIZE)
-        image_position_with_margin = [
-            [
-                max(0, image_position[0][0] - margin_w),
-                max(0, image_position[0][1] - margin_h)
-            ],
-            [
-                image_position[1][0] + margin_w,
-                image_position[1][1] + margin_h
-            ]
+    except KeyError:
+        # TODO: 사각형이 아닌 Polygon으로 레이블링된 데이터 처리
+        raise NotImplementedError
+    image_size = [
+        abs(image_position[1][0] - image_position[0][0]),
+        abs(image_position[1][1] - image_position[0][1])
+    ]
+
+    margin_w = int(image_size[0]*MARGIN_SIZE)
+    margin_h = int(image_size[1]*MARGIN_SIZE)
+    image_position_with_margin = [
+        [
+            max(0, image_position[0][0] - margin_w),
+            max(0, image_position[0][1] - margin_h)
+        ],
+        [
+            image_position[1][0] + margin_w,
+            image_position[1][1] + margin_h
         ]
+    ]
+    return image_position_with_margin
+
+
+def image_crop(image_file, image_position):
+    cropped_image = image_file[
+        image_position[0][1]:image_position[1][1],
+        image_position[0][0]:image_position[1][0]
+    ]
+    # cv2.imshow("cropped", cropped_image)
+    # cv2.waitKey(0)
+    return cropped_image
+
+
+def image_preprocess(category, subcategory, trash_name, file_name):
+    try:
+        image_file = read_img(category, subcategory, trash_name, file_name)
+        label_file = read_json(category, subcategory, trash_name, file_name)
+
+        image_filter(label_file)
         
-        # 이미지 크롭
-        image_cropped = image_file[
-            image_position_with_margin[0][1]:image_position_with_margin[1][1],
-            image_position_with_margin[0][0]:image_position_with_margin[1][0]
-        ]
-        # cv2.imshow("cropped", image_cropped)
-        # cv2.waitKey(0)
+        cropped_image = image_crop(image_file, get_image_position(label_file))
 
         # target 디렉토리 생성
         try:
@@ -109,15 +108,19 @@ def image_filter(category, subcategory, trash_name, file_name):
         # 크롭한 이미지 저장
         # cv2.imwrite(
         #     os.path.join(to_file_path, category, subcategory, image_name),
-        #     image_cropped
+        #     cropped_image
         # )
         
-        image_bgremoved = remove_bg(image_cropped)
+        image_bgremoved = remove_bg(cropped_image)
         cv2.imwrite(
             os.path.join(to_file_path, category, subcategory, image_name),
             image_bgremoved
         )
         return
+    except Exception as e:
+        print(type(e))
+        print(e)
+        exit()
 
 
 def remove_bg(image):
@@ -173,7 +176,7 @@ for category in os.listdir(JSON_DATA_FOLDER_PATH):
                 if label_name==".DS_Store":
                     continue
                 # print(f"    └─{label_name}")
-                image_filter(category, subcategory, trash_name, label_name)
+                image_preprocess(category, subcategory, trash_name, label_name)
             
             # 진행 과정 출력
             current += 1
