@@ -12,19 +12,42 @@ try:
 except FileExistsError:
     pass
 
+# 디렉토리 설정
 to_file_path = os.path.join(path, "filtered")
-labeled_data_folder_path = os.path.join(path, "Training/Training_라벨링데이터")
-image_folder_path = os.path.join(path, "Training")
+JSON_DATA_FOLDER_PATH = os.path.join(path, "Training/Training_라벨링데이터")
+IMAGE_FOLDER_PATH = os.path.join(path, "Training")
 
 
-def read_img(image_path):
-    pass
+def read_img(category, subcategory, trash_name, file_name):
+    # 카테고리가 있는지 확인
+    if not os.path.isdir(os.path.join(IMAGE_FOLDER_PATH, f"[T원천]{category}_{subcategory}_{subcategory}")):
+        raise # TODO: 에러 메시지
+
+    image_name = ".".join(file_name.split(".")[:-1]) + ".jpg"
+    image_path = os.path.join(IMAGE_FOLDER_PATH, f"[T원천]{category}_{subcategory}_{subcategory}", trash_name, image_name)
+
+    # 이미지를 cv2 객체로 불러옴
+    image_file = cv2.imread(image_path)
+    # 경로에 한글이 있을 시 버그 나는 것 대응하는 코드
+    # img_array = np.fromfile(image_path, np.uint8)
+    # image_file = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
+
+    # cv2.imshow('origin', image_file)
+    # cv2.waitKey(0)
+
+    return image_file
+
+def read_json(category, subcategory, trash_name, file_name):
+    with open(os.path.join(JSON_DATA_FOLDER_PATH, category, subcategory, trash_name, file_name), 'r') as label_file_raw:
+        # json 디코드
+        label_file_json = json.load(label_file_raw)
+    return label_file_json
 
 
-def image_filter(category, subcategory, name, label_name):
-    with open(os.path.join(labeled_data_folder_path, category, subcategory, name, label_name), 'r') as label_file_raw:
+def image_filter(category, subcategory, trash_name, file_name):
+    with open(os.path.join(JSON_DATA_FOLDER_PATH, category, subcategory, trash_name, file_name+".json"), 'r') as label_file_raw:
         # 카테고리가 있는지 확인
-        if not os.path.isdir(os.path.join(image_folder_path, f"[T원천]{category}_{subcategory}_{subcategory}")):
+        if not os.path.isdir(os.path.join(IMAGE_FOLDER_PATH, f"[T원천]{category}_{subcategory}_{subcategory}")):
             return
 
         # json 디코드
@@ -34,8 +57,8 @@ def image_filter(category, subcategory, name, label_name):
             return
         
         # 이미지 불러오기
-        image_name = ".".join(label_name.split(".")[:-1]) + ".jpg"
-        image_path = os.path.join(image_folder_path, f"[T원천]{category}_{subcategory}_{subcategory}", name, image_name)
+        image_name = ".".join(file_name.split(".")[:-1]) + ".jpg"
+        image_path = os.path.join(IMAGE_FOLDER_PATH, f"[T원천]{category}_{subcategory}_{subcategory}", trash_name, image_name)
         # img_array = np.fromfile(image_path, np.uint8)
         # image_file = cv2.imdecode(img_array, cv2.IMREAD_COLOR) # 경로에 한글이 있을 시 버그 나는 것 대응하는 코드
         image_file = cv2.imread(image_path)
@@ -109,12 +132,12 @@ def save_img():
     pass
 
 
-for category in os.listdir(labeled_data_folder_path):
+for category in os.listdir(JSON_DATA_FOLDER_PATH):
     category = unicodedata.normalize('NFC', category) # 한글 풀어쓰기로 인한 오류 방지
     if category==".DS_Store":
         continue
 
-    category_path = os.path.join(labeled_data_folder_path, category)
+    category_path = os.path.join(JSON_DATA_FOLDER_PATH, category)
     if not os.path.isdir(category_path):
         continue
     print(category, end='\r')
@@ -123,7 +146,7 @@ for category in os.listdir(labeled_data_folder_path):
         subcategory = unicodedata.normalize('NFC', subcategory)
         if subcategory==".DS_Store":
             continue
-        if not os.path.isdir(os.path.join(image_folder_path, f"[T원천]{category}_{subcategory}_{subcategory}")):
+        if not os.path.isdir(os.path.join(IMAGE_FOLDER_PATH, f"[T원천]{category}_{subcategory}_{subcategory}")):
             continue
         
         subcategory_path = os.path.join(category_path, subcategory)
@@ -159,5 +182,3 @@ for category in os.listdir(labeled_data_folder_path):
             bar = '█' * filled_length + '-' * (40 - filled_length)
             print(f"└─{subcategory}:\t |{bar}| {percent:.2f}%", end='\r')
         print()
-
-
