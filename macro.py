@@ -13,7 +13,7 @@ except FileExistsError:
     pass
 
 # 디렉토리 설정
-to_file_path = os.path.join(path, "filtered")
+RESULT_FOLDER_PATH = os.path.join(path, "filtered")
 JSON_DATA_FOLDER_PATH = os.path.join(path, "Training/Training_라벨링데이터")
 IMAGE_FOLDER_PATH = os.path.join(path, "Training")
 
@@ -90,6 +90,19 @@ def image_crop(image_file, image_position):
     return cropped_image
 
 
+def save_img(image_file, category, subcategory, trash_name, file_name):
+    # target 디렉토리 생성
+    try:
+        os.makedirs(os.path.join(RESULT_FOLDER_PATH, category, subcategory))
+    except FileExistsError:
+        pass
+    image_path = os.path.join(RESULT_FOLDER_PATH, category, subcategory, file_name+".jpg"),
+    cv2.imwrite(
+        image_path,
+        image_file
+    )
+
+
 def image_preprocess(category, subcategory, trash_name, file_name):
     try:
         image_file = read_img(category, subcategory, trash_name, file_name)
@@ -99,23 +112,8 @@ def image_preprocess(category, subcategory, trash_name, file_name):
         
         cropped_image = image_crop(image_file, get_image_position(label_file))
 
-        # target 디렉토리 생성
-        try:
-            os.makedirs(os.path.join(to_file_path, category, subcategory))
-        except FileExistsError:
-            pass
-
-        # 크롭한 이미지 저장
-        # cv2.imwrite(
-        #     os.path.join(to_file_path, category, subcategory, image_name),
-        #     cropped_image
-        # )
-        
         image_bgremoved = remove_bg(cropped_image)
-        cv2.imwrite(
-            os.path.join(to_file_path, category, subcategory, image_name),
-            image_bgremoved
-        )
+        save_img(image_bgremoved, category, subcategory, trash_name, file_name)
         return
     except Exception as e:
         print(type(e))
@@ -129,10 +127,6 @@ def remove_bg(image):
     # cv2.waitKey(0)
     
     return image_bgremoved
-
-
-def save_img():
-    pass
 
 
 for category in os.listdir(JSON_DATA_FOLDER_PATH):
