@@ -19,7 +19,7 @@ path = '/'.join(os.path.abspath(__file__).split('/')[:-1])
 
 # 변환한 사진 저장할 디렉토리 생성
 try:
-    os.mkdir("filtered")
+    os.mkdir(os.path.join(path, "filtered"))
 except FileExistsError:
     pass
 
