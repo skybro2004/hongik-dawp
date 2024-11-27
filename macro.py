@@ -1,9 +1,20 @@
-import os, shutil, unicodedata, json
+import os, unicodedata, json
 import cv2
 import numpy as np
 from rembg import remove
 
+class Error(Exception):
+    def __init__(self, msg):
+        self.msg = msg
+    def __str__(self):
+        return self.msg
+
+# 이미지의 여백을 설정하는 변수입니다. 
+# 이미지의 사이즈 기준 여백의 비율을 입력합니다.
+# 예) 1/8: 이미지의 가로길이의 1/8 만큼의 여백을 각각 왼쪽, 오른쪽에 배치하고 세로길이의 1/8만큼의 여백을 각각 위, 아래에 배치합니다.
 MARGIN_SIZE = 0
+# 경로를 설정합니다. "생활 폐기물 이미지" 폴더로 설정해주세요.
+# 기본값: 현재 실행 파일의 디렉토리
 path = '/'.join(os.path.abspath(__file__).split('/')[:-1])
 
 # 변환한 사진 저장할 디렉토리 생성
@@ -21,9 +32,9 @@ IMAGE_FOLDER_PATH = os.path.join(path, "Training")
 def read_img(category, subcategory, trash_name, file_name):
     # 카테고리가 있는지 확인
     if not os.path.isdir(os.path.join(IMAGE_FOLDER_PATH, f"[T원천]{category}_{subcategory}_{subcategory}")):
-        raise Exception("해당 카테고리 이미지가 없음.")
+        raise Error("해당 카테고리 이미지가 없음.")
 
-    image_name = ".".join(file_name.split(".")[:-1]) + ".jpg"
+    image_name = file_name + ".jpg"
     image_path = os.path.join(IMAGE_FOLDER_PATH, f"[T원천]{category}_{subcategory}_{subcategory}", trash_name, image_name)
 
     # 이미지를 cv2 객체로 불러옴
@@ -38,7 +49,7 @@ def read_img(category, subcategory, trash_name, file_name):
     return image_file
 
 def read_json(category, subcategory, trash_name, file_name):
-    with open(os.path.join(JSON_DATA_FOLDER_PATH, category, subcategory, trash_name, file_name), 'r') as label_file_raw:
+    with open(os.path.join(JSON_DATA_FOLDER_PATH, category, subcategory, trash_name, file_name+".json"), 'r') as label_file_raw:
         # json 디코드
         label_file = json.load(label_file_raw)
     return label_file
@@ -47,7 +58,7 @@ def read_json(category, subcategory, trash_name, file_name):
 def image_filter(label_file):
     # 이미지 내 쓰레기가 2개 이상이면 raise
     if label_file["BoundingCount"]!="1":
-        raise Exception("이미지 내 쓰레기가 2개 이상임.")
+        raise Error("이미지 내 쓰레기가 2개 이상임.")
 
 
 def get_image_position(label_file):
@@ -104,7 +115,7 @@ def save_img(image_file, category, subcategory, trash_name, file_name):
         os.makedirs(os.path.join(RESULT_FOLDER_PATH, category, subcategory))
     except FileExistsError:
         pass
-    image_path = os.path.join(RESULT_FOLDER_PATH, category, subcategory, file_name+".jpg"),
+    image_path = os.path.join(RESULT_FOLDER_PATH, category, subcategory, file_name+".jpg")
     cv2.imwrite(
         image_path,
         image_file
@@ -123,18 +134,12 @@ def image_preprocess(category, subcategory, trash_name, file_name):
         image_file = remove_bg(image_file)
         save_img(image_file, category, subcategory, trash_name, file_name)
         return
-    except Exception as e:
-        print(type(e))
-        print(e)
-        exit()
-
-
-def remove_bg(image):
-    image_bgremoved = remove(image)
-    # cv2.imshow("test", image_bgremoved)
-    # cv2.waitKey(0)
-    
-    return image_bgremoved
+    except NotImplementedError:
+        pass
+    except Error as e:
+        # print(type(e))
+        # print(e)
+        pass
 
 
 for category in os.listdir(JSON_DATA_FOLDER_PATH):
@@ -145,7 +150,7 @@ for category in os.listdir(JSON_DATA_FOLDER_PATH):
     category_path = os.path.join(JSON_DATA_FOLDER_PATH, category)
     if not os.path.isdir(category_path):
         continue
-    print(category, end='\r')
+    print(f"{category}        ", end='\r')
 
     for subcategory in os.listdir(category_path):
         subcategory = unicodedata.normalize('NFC', subcategory)
@@ -158,10 +163,10 @@ for category in os.listdir(JSON_DATA_FOLDER_PATH):
         if not os.path.isdir(subcategory_path):
             continue
         print()
-        print(f"└─{subcategory}", end='\r')
+        print(f"└─{subcategory}        ", end='\r')
         
-        total = len(os.listdir(subcategory_path))
-        current = 1
+        total = len(os.listdir(subcategory_path))*5
+        current = 2
 
         for trash_name in os.listdir(subcategory_path):
             trash_name = unicodedata.normalize('NFC', trash_name)
@@ -173,17 +178,18 @@ for category in os.listdir(JSON_DATA_FOLDER_PATH):
                 continue
             # print(f"  └─{trash_name}")
 
-            for label_name in os.listdir(trash_path):
-                label_name = unicodedata.normalize('NFC', label_name)
-                if label_name==".DS_Store":
+            for file_name in os.listdir(trash_path):
+                file_name = unicodedata.normalize('NFC', file_name)
+                if file_name==".DS_Store":
                     continue
                 # print(f"    └─{label_name}")
-                image_preprocess(category, subcategory, trash_name, label_name)
+                file_name = ".".join(file_name.split(".")[:-1])
+                image_preprocess(category, subcategory, trash_name, file_name)
             
-            # 진행 과정 출력
-            current += 1
-            percent = min(100, (current / total) * 100)
-            filled_length = 40 * current // total
-            bar = '█' * filled_length + '-' * (40 - filled_length)
-            print(f"└─{subcategory}:\t |{bar}| {percent:.2f}%", end='\r')
+                # 진행 과정 출력
+                current += 1
+                percent = min(100, (current / total) * 100)
+                filled_length = 40 * current // total
+                bar = '█' * filled_length + '-' * (40 - filled_length)
+                print(f"└─{subcategory}:\t |{bar}| {percent:.2f}%", end='\r')
         print()
