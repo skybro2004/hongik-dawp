@@ -15,18 +15,18 @@ class Error(Exception):
 MARGIN_SIZE = 0
 # 경로를 설정합니다. "생활 폐기물 이미지" 폴더로 설정해주세요.
 # 기본값: 현재 실행 파일의 디렉토리
-path = '/'.join(os.path.abspath(__file__).split('/')[:-1])
+PATH = '/'.join(os.path.abspath(__file__).split('/')[:-1])
 
 # 변환한 사진 저장할 디렉토리 생성
 try:
-    os.mkdir(os.path.join(path, "filtered"))
+    os.mkdir(os.path.join(PATH, "filtered"))
 except FileExistsError:
     pass
 
 # 디렉토리 설정
-RESULT_FOLDER_PATH = os.path.join(path, "filtered")
-LABEL_DATA_FOLDER_PATH = os.path.join(path, "Training/Training_라벨링데이터")
-IMAGE_FOLDER_PATH = os.path.join(path, "Training")
+RESULT_FOLDER_PATH = os.path.join(PATH, "filtered")
+LABEL_DATA_FOLDER_PATH = os.path.join(PATH, "Training/Training_라벨링데이터")
+IMAGE_FOLDER_PATH = os.path.join(PATH, "Training")
 
 
 def read_img(category: str, subcategory: str, trash_name: str, file_name: str) -> np.ndarray:
