@@ -63,7 +63,7 @@ def read_img(category: str, subcategory: str, trash_name: str, file_name: str) -
 
     return image_file
 
-def read_json(category: str, subcategory: str, trash_name: str, file_name: str) -> dict:
+def read_label(category: str, subcategory: str, trash_name: str, file_name: str) -> dict:
     """json 파일을 읽어 Python Object로 반환합니다.
 
     Args:
@@ -219,7 +219,7 @@ def image_preprocess(category: str, subcategory: str, trash_name: str, file_name
     """
     try:
         image_file = read_img(category, subcategory, trash_name, file_name)
-        label_file = read_json(category, subcategory, trash_name, file_name)
+        label_file = read_label(category, subcategory, trash_name, file_name)
 
         image_filter(label_file)
         
