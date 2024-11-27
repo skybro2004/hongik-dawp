@@ -90,6 +90,14 @@ def image_crop(image_file, image_position):
     return cropped_image
 
 
+def remove_bg(image_file):
+    image_bgremoved = remove(image_file)
+    # cv2.imshow("test", image_bgremoved)
+    # cv2.waitKey(0)
+
+    return image_bgremoved
+
+
 def save_img(image_file, category, subcategory, trash_name, file_name):
     # target 디렉토리 생성
     try:
@@ -110,10 +118,10 @@ def image_preprocess(category, subcategory, trash_name, file_name):
 
         image_filter(label_file)
         
-        cropped_image = image_crop(image_file, get_image_position(label_file))
+        image_file = image_crop(image_file, get_image_position(label_file))
 
-        image_bgremoved = remove_bg(cropped_image)
-        save_img(image_bgremoved, category, subcategory, trash_name, file_name)
+        image_file = remove_bg(image_file)
+        save_img(image_file, category, subcategory, trash_name, file_name)
         return
     except Exception as e:
         print(type(e))
