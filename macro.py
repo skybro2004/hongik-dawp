@@ -82,12 +82,17 @@ def read_label(category: str, subcategory: str, trash_name: str, file_name: str)
     return label_file
 
 
-def image_filter(label_file: dict) -> None:
+def image_filter(label_file: dict, category: str, subcategory: str, trash_name: str, file_name: str) -> None:
     """학습에 부적절한 이미지가 들어오면 에러를 발생시킵니다.
     * 이미지 내 쓰레기가 2개 이상일 때.
+    * 이미 전처리 완료된 이미지가 있을 떄.
 
     Args:
         label_file (dict): 이미지 레이블
+        category (str): 카테고리
+        subcategory (str): 세부 카테고리
+        trash_name (str): 쓰레기 이름
+        file_name (str): 파일 이름
 
     Raises:
         Error: 부적절한 이미지일 경우 에러 메시지와 함께 발생
@@ -95,6 +100,11 @@ def image_filter(label_file: dict) -> None:
     # 이미지 내 쓰레기가 2개 이상이면 raise
     if label_file["BoundingCount"]!="1":
         raise Error("이미지 내 쓰레기가 2개 이상임.")
+
+    # 이미지가 존재할 시 raise
+    image_path = os.path.join(RESULT_FOLDER_PATH, category, subcategory, file_name+".jpg")
+    if os.path.exists(image_path):
+        raise Error("이미 전처리 완료된 이미지임.")
 
 
 def get_image_position(label_file: dict) -> list:
@@ -221,7 +231,7 @@ def image_preprocess(category: str, subcategory: str, trash_name: str, file_name
         image_file = read_img(category, subcategory, trash_name, file_name)
         label_file = read_label(category, subcategory, trash_name, file_name)
 
-        image_filter(label_file)
+        image_filter(label_file, category, subcategory, trash_name, file_name)
         
         image_file = image_crop(image_file, get_image_position(label_file))
 
