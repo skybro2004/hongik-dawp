@@ -109,7 +109,7 @@ def image_filter(label_file: dict, category: str, subcategory: str, trash_name: 
         raise Error("이미지 내 쓰레기가 2개 이상임.")
 
     # 전처리 완료 이미지가 존재할 시 raise
-    image_path = os.path.join(RESULT_FOLDER_PATH, category, subcategory, file_name+".jpg")
+    image_path = os.path.join(RESULT_FOLDER_PATH, category, file_name+".jpg")
     if os.path.exists(image_path):
         raise Error("이미 전처리 완료된 이미지임.")
 
@@ -215,11 +215,13 @@ def save_img(image_file: np.ndarray, category: str, subcategory: str, trash_name
     """
     # target 디렉토리 생성
     try:
-        os.makedirs(os.path.join(RESULT_FOLDER_PATH, category, subcategory))
+        os.makedirs(os.path.join(RESULT_FOLDER_PATH, category))
+        # os.makedirs(os.path.join(RESULT_FOLDER_PATH, category, subcategory))
     except FileExistsError:
         pass
 
-    image_path = os.path.join(RESULT_FOLDER_PATH, category, subcategory, file_name+".jpg")
+    image_path = os.path.join(RESULT_FOLDER_PATH, category, file_name+".jpg")
+    # image_path = os.path.join(RESULT_FOLDER_PATH, category, subcategory, file_name+".jpg")
     cv2.imwrite(
         image_path,
         image_file
