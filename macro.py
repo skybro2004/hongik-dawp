@@ -2,6 +2,12 @@ import os, unicodedata, json
 import cv2
 import numpy as np
 from rembg import remove
+import rembg
+
+rembg_session = rembg.new_session()
+
+print(f"사용 하드웨어 정보: {rembg_session.inner_session.get_providers()}")
+# CPU 사용시 ['CPUExecutionProvider']
 
 class Error(Exception):
     def __init__(self, msg):
@@ -187,7 +193,8 @@ def remove_bg(image_file: np.ndarray) -> np.ndarray:
     Returns:
         np.ndarray: 배경을 제거한 이미지
     """
-    image_bgremoved = remove(image_file)
+    image_bgremoved = remove(image_file, session=rembg_session)
+    # image_bgremoved = remove(image_file)
 
     # 이미지 프리뷰
     # cv2.imshow("test", image_bgremoved)
