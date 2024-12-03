@@ -15,6 +15,7 @@ class Error(Exception):
 MARGIN_SIZE = 0
 # 경로를 설정합니다. "생활 폐기물 이미지" 폴더로 설정해주세요.
 # 기본값: 현재 실행 파일의 디렉토리
+# PATH = "C:/이미지가/들어있는/폴더/생활 폐기물 이미지"
 PATH = '/'.join(os.path.abspath(__file__).split('/')[:-1])
 
 # 변환한 사진 저장할 디렉토리 생성
@@ -101,7 +102,7 @@ def image_filter(label_file: dict, category: str, subcategory: str, trash_name: 
     if label_file["BoundingCount"]!="1":
         raise Error("이미지 내 쓰레기가 2개 이상임.")
 
-    # 이미지가 존재할 시 raise
+    # 전처리 완료 이미지가 존재할 시 raise
     image_path = os.path.join(RESULT_FOLDER_PATH, category, subcategory, file_name+".jpg")
     if os.path.exists(image_path):
         raise Error("이미 전처리 완료된 이미지임.")
