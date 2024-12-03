@@ -1,4 +1,4 @@
-import os, unicodedata, json
+import os, unicodedata, json, traceback
 import cv2
 import numpy as np
 from rembg import remove
@@ -255,6 +255,13 @@ def image_preprocess(category: str, subcategory: str, trash_name: str, file_name
         # print(type(e))
         # print(e)
         pass
+    except Exception as e:
+        print(print(traceback.format_exc()))
+        print(f"발생 위치: {category} - {subcategory} - {file_name}")
+        inp = input("계속할까요?(y/n)")
+        if inp=="n" or inp=="N":
+            raise Exception("전처리 중단")
+        return
 
 
 # 모든 카테고리에 대해
