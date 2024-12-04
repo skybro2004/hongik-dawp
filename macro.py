@@ -4,6 +4,22 @@ import numpy as np
 from rembg import remove
 import rembg
 
+
+# 이미지의 여백을 설정하는 변수입니다. 
+# 이미지의 사이즈 기준 여백의 비율을 입력합니다.
+# 예) 1/8: 이미지의 가로길이의 1/8 만큼의 여백을 각각 왼쪽, 오른쪽에 배치하고 세로길이의 1/8만큼의 여백을 각각 위, 아래에 배치합니다.
+MARGIN_SIZE = 0
+# 경로를 설정합니다. "생활 폐기물 이미지" 폴더로 설정해주세요.
+# 기본값: 현재 실행 파일의 디렉토리
+# PATH = "/Volumes/UX200P/생활폐기물이미지"
+PATH = '/'.join(os.path.abspath(__file__).split('/')[:-1])
+
+# 디렉토리 설정
+RESULT_FOLDER_PATH = os.path.join(PATH, "filtered")
+LABEL_DATA_FOLDER_PATH = os.path.join(PATH, "Training/Training_라벨링데이터")
+IMAGE_FOLDER_PATH = os.path.join(PATH, "Training")
+
+
 rembg_session = rembg.new_session()
 
 print(f"사용 하드웨어 정보: {rembg_session.inner_session.get_providers()}")
@@ -15,25 +31,11 @@ class Error(Exception):
     def __str__(self):
         return self.msg
 
-# 이미지의 여백을 설정하는 변수입니다. 
-# 이미지의 사이즈 기준 여백의 비율을 입력합니다.
-# 예) 1/8: 이미지의 가로길이의 1/8 만큼의 여백을 각각 왼쪽, 오른쪽에 배치하고 세로길이의 1/8만큼의 여백을 각각 위, 아래에 배치합니다.
-MARGIN_SIZE = 0
-# 경로를 설정합니다. "생활 폐기물 이미지" 폴더로 설정해주세요.
-# 기본값: 현재 실행 파일의 디렉토리
-# PATH = "C:/이미지가/들어있는/폴더/생활 폐기물 이미지"
-PATH = '/'.join(os.path.abspath(__file__).split('/')[:-1])
-
 # 변환한 사진 저장할 디렉토리 생성
 try:
     os.mkdir(os.path.join(PATH, "filtered"))
 except FileExistsError:
     pass
-
-# 디렉토리 설정
-RESULT_FOLDER_PATH = os.path.join(PATH, "filtered")
-LABEL_DATA_FOLDER_PATH = os.path.join(PATH, "Training/Training_라벨링데이터")
-IMAGE_FOLDER_PATH = os.path.join(PATH, "Training")
 
 
 def read_img(category: str, subcategory: str, trash_name: str, file_name: str) -> np.ndarray:
@@ -317,7 +319,7 @@ for category in os.listdir(LABEL_DATA_FOLDER_PATH):
                 # 진행 과정 출력
                 current += 1
                 percent = min(100, (current / total) * 100)
-                filled_length = 40 * current // total
+                filled_length = min(40, 40 * current // total)
                 bar = '█' * filled_length + '-' * (40 - filled_length)
-                print(f"└─{subcategory}:\t |{bar}| {percent:.2f}%", end='\r')
+                print(f"└─{subcategory.ljust(6, ' ')}:\t|{bar}| {percent:.2f}%", end='\r')
         print()
