@@ -5,6 +5,25 @@ from rembg import remove
 import rembg
 
 
+# 전처리를 진행할 카테고리
+categories_to_preprocess = [
+    # "가구류",
+    "고철류",
+    # "나무", 
+    # "도기류",
+    "비닐",
+    "스티로폼",
+    "유리병",
+    # "의류",
+    # "자전거",
+    # "전자제품",
+    "종이류", 
+    "캔류",
+    "페트병",
+    "플라스틱류",
+    # "형광등",
+]
+print(sorted(categories_to_preprocess))
 # 이미지의 여백을 설정하는 변수입니다. 
 # 이미지의 사이즈 기준 여백의 비율을 입력합니다.
 # 예) 1/8: 이미지의 가로길이의 1/8 만큼의 여백을 각각 왼쪽, 오른쪽에 배치하고 세로길이의 1/8만큼의 여백을 각각 위, 아래에 배치합니다.
@@ -270,6 +289,8 @@ def image_preprocess(category: str, subcategory: str, trash_name: str, file_name
 for category in os.listdir(LABEL_DATA_FOLDER_PATH):
     category = unicodedata.normalize('NFC', category) # 한글 풀어쓰기로 인한 오류 방지
     if category==".DS_Store":
+        continue
+    if category not in categories_to_preprocess:
         continue
 
     category_path = os.path.join(LABEL_DATA_FOLDER_PATH, category)
